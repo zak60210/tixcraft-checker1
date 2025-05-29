@@ -51,27 +51,37 @@ def check_ticket_page():
         res = requests.get(TICKET_URL, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        font_tags = soup.select("li font")
+        li_tags = soup.select("li")
         results = []
+        all_checked = []
 
-        if not font_tags:
-            print(f"⚠️ 找不到票區標籤 ➜ {TICKET_URL}")
+        if not li_tags:
+            print(f"⚠️ 找不到任何 <li> 元素 ➜ {TICKET_URL}")
             return
 
-        for tag in font_tags:
-            text = tag.get_text(strip=True)
-            print(f"🎫 {text}")
+        for li in li_tags:
+            text = li.get_text(strip=True).replace("\n", " ")
+            if not text:
+                continue
+            all_checked.append(text)
             if re.search(r"(剩餘|尚有|可售)", text):
                 results.append(f"🎟️ {text}")
 
+        # === 有票 ===
         if results:
             all_text = "\n".join(results)
-            send_to_discord_embed("🎉 2025 HYERI FANMEETING TOUR", all_text, TICKET_URL)
+            send_to_discord_embed("🎉 有票啦！", all_text, TICKET_URL)
+
+        # === 沒票（也顯示所有檢查過的區塊）===
         else:
             print(f"❌ 無票 ➜ {TICKET_URL}")
+            print("🔍 掃描結果：")
+            for zone in all_checked:
+                print(f" - {zone}")
 
     except Exception as e:
-        print(f"⚠️ 錯誤：{e}")
+        print(f"⚠️ 錯誤 ➜ {TICKET_URL}：{e}")
+
 
 # ============ 主程式 ============
 def run_bot():
